@@ -1,0 +1,218 @@
+package service;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import entity.prodentity_folders;
+import entity.product_base64;
+import repository.prodrepo_folder;
+
+@Service
+public class prodbase64service {
+
+	@Autowired
+	private prodrepo_folder prodrepofolder;
+	
+	
+//	@Autowired
+//	private fetchrepo fetchrepository;
+	
+	private final String folderpath = "C:\\Users\\AnkitaBagwe\\OneDrive - Adapt Fintech Advisors Private Limited\\Documents\\ankita\\Desktop\\Ankita_Project\\Indiamart\\Indiamart_clone_backend\\Products";
+	
+	 public prodentity_folders saveProduct(product_base64 base64) throws IOException {
+		 
+		 prodentity_folders prodentity64 = new prodentity_folders();
+		 
+		 prodentity64.setProductName(base64.getProductName());
+		 prodentity64.setPrice(base64.getPrice());
+		 prodentity64.setProductdescription(base64.getProductDescription());
+		 prodentity64.setMobileNumber(base64.getMobileNumber());
+		 
+		 System.out.println("Mobile number received: " + base64.getMobileNumber());
+
+		 if (base64.getFile() != null && base64.getFile().contains(",")) {
+			    String[] parts = base64.getFile().split(",");
+			    if (parts.length > 1) {
+			        byte[] decodedBytes = Base64.getDecoder().decode(parts[1]);
+			        String filePath = folderpath + "\\"+ System.currentTimeMillis() + ".png"; // Save with a unique name
+			       System.out.println("storing image at" + filePath);
+			        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+			            fos.write(decodedBytes);
+			        }
+			        catch (IOException e) {
+			            e.printStackTrace();
+			            throw new RuntimeException("Failed to write image file to the folder", e);
+			        }
+			        prodentity64.setFilepath(filePath);
+			    } else {
+			        throw new IllegalArgumentException("Invalid Base64 input, missing encoded data");
+			    }
+			} else {
+			    throw new IllegalArgumentException("Base64 input is null or doesn't contain the expected format");
+			}
+
+		 return prodrepofolder.save(prodentity64);
+			 
+}
+	 
+	 
+//	 public List<product_base64> fetchProductWithImage(String productname) throws IOException {
+//		 
+//		 List<prodentity_folders> productoptional = prodrepofolder.findByProductNameContainingIgnoreCase(productname);
+//		 if(productoptional.isEmpty()) {
+//			  throw new RuntimeException("Product not found with name: " + productname);
+//		 }
+//		 
+//		 
+//		 List<product_base64> productDtos = new ArrayList<>();
+//		    for (prodentity_folders productEntity : productoptional) {
+//		        product_base64 productDto = new product_base64();
+//		        productDto.setProductName(productEntity.getProductName());
+//		        productDto.setPrice(productEntity.getPrice());
+//		        productDto.setProductDescription(productEntity.getProductdescription());
+//
+//		        // Fetch the image file and convert it to Base64
+//		        File imageFile = new File(productEntity.getFilepath());
+//		        if (imageFile.exists()) {
+//		            byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+//		            String base64Image = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+//		            productDto.setFile(base64Image);
+//		        } else {
+//		            throw new RuntimeException("Image file not found at path: " + productEntity.getFilepath());
+//		        }
+//
+//		        productDtos.add(productDto);
+//		    }
+//
+//		    return productDtos;
+//		 
+//	 }
+	 
+	 public List<product_base64> fetchProductWithImage(String productName, String city) throws IOException {
+		    // Fetch products by product name and city
+		    List<prodentity_folders> productEntities;
+		    if (productName != null && !productName.isEmpty() && city != null && !city.isEmpty()) {
+		        productEntities = prodrepofolder.findByProductNameContainingIgnoreCaseAndProductdescriptionContainingIgnoreCase(productName, city);
+		    } else if (productName != null && !productName.isEmpty()) {
+		        productEntities = prodrepofolder.findByProductNameContainingIgnoreCase(productName);
+		    }  else {
+		        throw new IllegalArgumentException("At least one of 'productName' or 'city' must be provided.");
+		    }
+		    // Check if no products are found
+		    if (productEntities.isEmpty()) {
+		        throw new RuntimeException("No products found with name: " + productName + " and city: " + city);
+		    }
+
+		    // Convert products to DTO with Base64 images
+		    List<product_base64> productDtos = new ArrayList<>();
+		    for (prodentity_folders productEntity : productEntities) {
+		        product_base64 productDto = new product_base64();
+		        productDto.setProductName(productEntity.getProductName());
+		        productDto.setPrice(productEntity.getPrice());
+		        productDto.setProductDescription(productEntity.getProductdescription());
+
+		        // Fetch the image file and convert it to Base64
+		        File imageFile = new File(productEntity.getFilepath());
+		        if (imageFile.exists()) {
+		            byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+		            String base64Image = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+		            productDto.setFile(base64Image);
+		        } else {
+		            throw new RuntimeException("Image file not found at path: " + productEntity.getFilepath());
+		        }
+
+		        productDtos.add(productDto);
+		    }
+
+		    return productDtos;
+		}
+	 
+	 public List<product_base64> getRandomProducts(int limit) {
+		    List<prodentity_folders> randomProducts = prodrepofolder.findRandomProducts(limit);
+
+		    if (randomProducts == null || randomProducts.isEmpty()) {
+		        throw new RuntimeException("No random products found.");
+		    }
+
+		    List<product_base64> productDtos = new ArrayList<>();
+
+		    for (prodentity_folders productEntity : randomProducts) {
+		        product_base64 productDto = new product_base64();
+		        productDto.setId(productEntity.getId());
+		        productDto.setProductName(productEntity.getProductName());
+		        productDto.setPrice(productEntity.getPrice());
+		        productDto.setProductDescription(productEntity.getProductdescription());
+		        productDto.setMobileNumber(productEntity.getMobileNumber());
+
+		        // Convert the image to Base64 if it exists
+		        String imagePath = productEntity.getFilepath();
+		        if (imagePath != null && !imagePath.isEmpty()) {
+		            File imageFile = new File(imagePath);
+		            if (imageFile.exists()) {
+		                try {
+		                    byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+		                    String base64Image = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+		                    productDto.setFile(base64Image);
+		                } catch (IOException e) {
+		                    System.err.println("Error reading image file: " + imagePath);
+		                    e.printStackTrace();
+		                    productDto.setFile(null); // Set to null if there's an error
+		                }
+		            } else {
+		                System.err.println("Image file not found at: " + imagePath);
+		                productDto.setFile(null);
+		            }
+		        }
+
+		        productDtos.add(productDto);
+		    }
+
+		    return productDtos;
+		}
+	 
+
+//	 public List<product_base64> getRandomProducts(int limit) throws IOException {
+//	        // Fetch random products from the repository
+//	        List<prodentity_folders> randomProducts = prodrepofolder.findRandomProducts(limit);
+//
+//	        // If no products are found, throw an exception
+//	        if (randomProducts.isEmpty()) {
+//	            throw new RuntimeException("No random products found.");
+//	        }
+//
+//	        // List to store the DTOs (product_base64 objects)
+//	        List<product_base64> productDtos = new ArrayList<>();
+//	        
+//	        // Convert each random product to a DTO with a Base64 image
+//	        for (prodentity_folders productEntity : randomProducts) {
+//	            product_base64 productDto = new product_base64();
+//	            productDto.setProductName(productEntity.getProductName());
+//	            productDto.setPrice(productEntity.getPrice());
+//	            productDto.setProductDescription(productEntity.getProductdescription());
+//	            productDto.setMobileNumber(productEntity.getMobileNumber());
+//	            // Fetch the image file and convert it to Base64
+//	            File imageFile = new File(productEntity.getFilepath());
+//	            if (imageFile.exists()) {
+//	                byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
+//	                String base64Image = "data:image/png;base64," + Base64.getEncoder().encodeToString(imageBytes);
+//	                productDto.setFile(base64Image); // Set the Base64 image string
+//	            } else {
+//	                throw new RuntimeException("Image file not found at path: " + productEntity.getFilepath());
+//	            }
+//
+//	            productDtos.add(productDto); // Add the product DTO to the list
+//	        }
+//
+//	        return productDtos; // Return the list of products with Base64 images
+//	    }
+
+}

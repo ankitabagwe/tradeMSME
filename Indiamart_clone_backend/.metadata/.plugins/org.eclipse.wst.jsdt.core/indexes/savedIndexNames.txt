@@ -1,0 +1,8 @@
+INDEX VERSION 1.4+C:\Users\AnkitaBagwe\OneDrive - Adapt Fintech Advisors Private Limited\Documents\ankita\Desktop\Ankita_Project\Indiamart\Indiamart_clone_backend\.metadata\.plugins\org.eclipse.wst.jsdt.core\indexes
+3435648363.index
+1265353671.index
+233228998.index
+172197599.index
+663074709.index
+2271082390.index
+916799046.index

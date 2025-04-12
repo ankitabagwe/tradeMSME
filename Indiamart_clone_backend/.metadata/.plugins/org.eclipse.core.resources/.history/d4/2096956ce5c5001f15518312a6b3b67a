@@ -1,0 +1,54 @@
+package testcontroller;
+
+import java.io.Console;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import entity.buisnessdetailsent;
+import entity.gstpandetails;
+import service.buisnessdetailsservice;
+import service.gstservice;
+
+@RestController
+@CrossOrigin(origins = "http://localhost:4200")
+public class buisnessdetailscontrollers {
+	
+	@Autowired
+	private buisnessdetailsservice Buisnessdetailsservice;
+	
+	@Autowired
+	private gstservice servicegst;
+	
+	
+	@PostMapping("/buisnessdetails")
+	public buisnessdetailsent getbuisnessdetails( @RequestBody buisnessdetailsent e) {
+		 System.out.println("Received: " + e);
+	return Buisnessdetailsservice.SaveDetails(e);
+	
+	}
+	
+	@PostMapping("/gstdetails")
+	public gstpandetails getgstdetails( @RequestBody gstpandetails e) {
+		 System.out.println("Received: " + e);
+	return servicegst.SaveDetails(e);
+	
+	}
+	
+	//to check if seller registered
+	 @GetMapping("/checkMobileNumber")
+	    public ResponseEntity<Boolean> checkMobileNumber(@RequestParam String mobilenumber) {
+	        boolean isRegistered = Buisnessdetailsservice.isMobileNumberRegistered(mobilenumber);
+	        return ResponseEntity.ok(isRegistered);
+	    }
+	
+	
+}
